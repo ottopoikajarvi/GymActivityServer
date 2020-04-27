@@ -13,10 +13,10 @@ def blueSocket(conn):
     try:
         while True:
             data = conn.recv(1024)
-            if len(data) == 0:
-                break
-            print("received [%s]" % data)
-            q.put(data)
+            if len(data) != 0:
+             #   break
+                print("received [%s]" % data)
+                q.put(data)
     except IOError:
         pass
     print("Disconnected")
@@ -53,7 +53,7 @@ def main():
 
             client_sock, client_info = server_sock.accept()
             print("Accepted connection from ", client_info)
-            bluconn = Thread(target=blueSocket, args=(client_sock))
+            bluconn = Thread(target=blueSocket, args=(client_sock,))
             bluconn.start()
         while True:
             print("Max connections reached: " + str(maxcons))
