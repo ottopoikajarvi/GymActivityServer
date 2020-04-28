@@ -1,4 +1,4 @@
-#Modified from rfcomm-server.py Albert Huang
+#Bluetooth socket modified from rfcomm-server.py Albert Huang
 #Available at: https://github.com/karulis/pybluez/blob/master/examples/simple/rfcomm-server.py
 
 from bluetooth import *
@@ -30,6 +30,7 @@ def readerThread():
 
 def main():
     maxcons = 4
+    threads = []
     worker = Thread(target=readerThread)
     worker.start()
 
@@ -53,8 +54,10 @@ def main():
 
             client_sock, client_info = server_sock.accept()
             print("Accepted connection from ", client_info)
+            stop_advertising(server_sock)
             bluconn = Thread(target=blueSocket, args=(client_sock,))
             bluconn.start()
+            threads.append(bluconn)
         while True:
             print("Max connections reached: " + str(maxcons))
     except KeyboardInterrupt:
