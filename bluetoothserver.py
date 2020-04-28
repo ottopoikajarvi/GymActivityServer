@@ -5,27 +5,59 @@ from bluetooth import *
 from threading import Thread
 import sys
 import queue
+import tkinter as tk
 
 q = queue.Queue()
 
 
-def blueSocket(conn):
+def blueSocket(conn, index):
     try:
         while True:
             data = conn.recv(1024)
             if len(data) != 0:
-             #   break
-                print("received [%s]" % data)
-                q.put(data)
+                #print("received [%s]" % data)
+                datastr = str(index) + ";" + data.decode("utf-8")
+                q.put(datastr)
     except IOError:
+        print("Disconnected")
         pass
-    print("Disconnected")
+    
 
 def readerThread():
     print("Printing thread started")
+    master = tk.Tk()
+    sockets = {}
+    rows = 0
     while True:
         msg = q.get()
         print(msg)
+        sockId, data = msg.split(";")
+        if sockId not in sockets:
+            sockRow = rows
+            rows += 1
+            sockets[sockId] = []
+            tk.Label(master, text="Connection " + sockId + " newest acceleration: ").grid(row=sockRow)
+            accLabel = tk.Label(master, text="")
+            accLabel.grid(row=sockRow, column=1)
+            sockets[sockId].append(accLabel)
+            tk.Label(master, text="Current stepcount: ").grid(row=sockRow, column=2)
+            stepLabel = tk.Label(master, text="0")
+            stepLabel.grid(row=sockRow, column=3)
+            sockets[sockId].append(stepLabel)
+            tk.Label(master, text="Activity (%): ").grid(row=sockRow, column=4)
+            actLabel = tk.Label(master, text="")
+            actLabel.grid(row=sockRow, column=5)
+            sockets[sockId].append(actLabel)
+        accLabel = sockets[sockId][0]
+        stepLabel = sockets[sockId][1]
+        actLabel = sockets[sockId][2]
+        data = data.split(",")
+        accLabel['text'] = data[0]
+        lastSteps = int(stepLabel["text"])
+        lastSteps += int(data[1])
+        stepLabel['text'] = str(lastSteps)
+        master.update()
+
 
 
 def main():
@@ -55,7 +87,7 @@ def main():
             client_sock, client_info = server_sock.accept()
             print("Accepted connection from ", client_info)
             stop_advertising(server_sock)
-            bluconn = Thread(target=blueSocket, args=(client_sock,))
+            bluconn = Thread(target=blueSocket, args=(client_sock,i))
             bluconn.start()
             threads.append(bluconn)
         while True:
