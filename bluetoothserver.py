@@ -1,6 +1,3 @@
-#Bluetooth socket modified from rfcomm-server.py Albert Huang
-#Available at: https://github.com/karulis/pybluez/blob/master/examples/simple/rfcomm-server.py
-
 from bluetooth import *
 from threading import Thread
 from socket import timeout
@@ -13,6 +10,7 @@ q = queue.Queue()
 
 
 def blueSocket(conn, index):
+    #Thread for listening to bluetooth sockets
     conn.settimeout(30)
     try:
         while True:
@@ -32,6 +30,7 @@ def blueSocket(conn, index):
     
 
 def readerThread():
+    #Thread drawing the GUI
     print("Printing thread started")
     master = tk.Tk()
     master.geometry("1600x900")
@@ -41,6 +40,7 @@ def readerThread():
         msg = q.get()
         #print(msg)
         sockId, data = msg.split(";")
+        #First, row for socket is created 
         if sockId not in sockets:
             sockRow = int(sockId) + 1
             rows += 1
@@ -65,12 +65,13 @@ def readerThread():
             sockets[sockId].append([0, 0, 0, 0, 0])
         #print(sockets[sockId])
         if data == "0":
-            #rip socket
+            #rip socket, hide row
             for widg in master.grid_slaves():
                 if int(widg.grid_info()["row"]) == (int(sockId) + 1):
                     widg.grid_forget()
             master.update()
             continue
+        #Socket's row is updated based on data received
         accLabel = sockets[sockId][0]
         stepLabel = sockets[sockId][1]
         actLabel = sockets[sockId][2]
@@ -106,6 +107,8 @@ def main():
     i = 0
     try:
         while True:
+            #Bluetooth socket modified from rfcomm-server.py Albert Huang
+            #Available at: https://github.com/karulis/pybluez/blob/master/examples/simple/rfcomm-server.py
             server_sock=BluetoothSocket( RFCOMM )
             server_sock.bind(("",PORT_ANY))
             server_sock.listen(1)
@@ -124,12 +127,12 @@ def main():
 
             client_sock, client_info = server_sock.accept()
             print("Accepted connection from ", client_info)
-            stop_advertising(server_sock)
+            stop_advertising(server_sock)  #Stop advertising the spent socket, new connection, new ad
             bluconn = Thread(target=blueSocket, args=(client_sock,i))
             i += 1
             bluconn.start()
             threads.append(bluconn)
-            if len(threads) > maxcons:
+            if len(threads) > maxcons:  #Releasing finished thread spots
                 while len(threads) > maxcons:
                     print("Max connections reached: " + str(maxcons))
                     time.sleep(2)
